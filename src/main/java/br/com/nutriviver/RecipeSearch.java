@@ -117,7 +117,9 @@ public class RecipeSearch {
             Map<String, Object> query = Map.of("size", 20, "query", Map.of("multi_match", Map.of(
                     "query", text,
                     "fields", List.of("name^3", "ingredients^2", "description", "mealType"),
-                    "fuzziness", "AUTO")));
+                    "fuzziness", "AUTO",
+                    // prefix_length 1: a primeira letra precisa bater ("frango" não traz "morango")
+                    "prefix_length", 1)));
             JsonNode hits = es.post().uri("/" + INDEX + "/_search").contentType(MediaType.APPLICATION_JSON)
                     .body(json.writeValueAsBytes(query)).retrieve().body(JsonNode.class)
                     .path("hits").path("hits");

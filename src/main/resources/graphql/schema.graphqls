@@ -1,6 +1,9 @@
+# Datas no formato "AAAA-MM-DD" (sempre o dia local do usuário, enviado pelo app).
+# Operações marcadas com [login] exigem o header "Authorization: Bearer <token>" devolvido por signUp/login.
+
 type Query {
-    "Lista receitas, com filtros opcionais (tipo de refeição, tempo máximo, ingredientes)."
-    recipes(mealType: String, maxPrepTime: Float, ingredients: [String!]): [Recipe!]!
+    "Lista receitas com filtros opcionais (tipos de refeição, faixa de tempo, ingredientes)."
+    recipes(mealTypes: [String!], minPrepTime: Float, maxPrepTime: Float, ingredients: [String!]): [Recipe!]!
     recipe(id: ID!): Recipe
     "Busca textual no Elasticsearch por nome, descrição ou ingrediente."
     searchRecipes(text: String!): [Recipe!]!
@@ -9,15 +12,43 @@ type Query {
     goals: [Goal!]!
     preferences: [Preference!]!
     restrictions: [Restriction!]!
-    user(id: ID!): User
+
+    "[login] Usuário da sessão."
+    me: User!
+    "[login] Receitas sem as restrições do usuário, priorizando alimentos preferidos e o objetivo."
+    recommendedRecipes(limit: Int = 6): [Recipe!]!
+    "[login] Cardápio entre duas datas (inclusive)."
+    plan(from: String!, to: String!): [PlanItem!]!
+    "[login] Estatísticas de progresso entre duas datas (inclusive)."
+    stats(from: String!, to: String!): Stats!
+    "[login] Água bebida no dia, em ml."
+    water(day: String!): Int!
 }
 
 type Mutation {
-    signUp(name: String!, password: String!): User!
+    signUp(name: String!, password: String!): AuthPayload!
     "Retorna null se usuário ou senha estiverem errados."
-    login(name: String!, password: String!): User
-    "Campos omitidos não são alterados. Preferências/restrições novas são criadas pelo nome."
-    updateProfile(userId: ID!, goal: String, preferences: [String!], restrictions: [String!]): User!
+    login(name: String!, password: String!): AuthPayload
+    "[login] Invalida o token atual."
+    logout: Boolean!
+    "[login] Campos omitidos não são alterados. Preferências/restrições novas são criadas pelo nome."
+    updateProfile(goal: String, preferences: [String!], restrictions: [String!]): User!
+
+    "[login] Agenda uma receita no cardápio."
+    addToPlan(recipeId: ID!, day: String!, time: String!, mealType: String!, note: String): PlanItem!
+    "[login] Reagenda, troca a receita ou marca como feita. Campos omitidos não mudam."
+    updatePlanItem(id: ID!, recipeId: ID, day: String, time: String, mealType: String, note: String, done: Boolean): PlanItem!
+    "[login] Remove do cardápio."
+    removePlanItem(id: ID!): Boolean!
+    "[login] Soma (ou subtrai, se negativo) água no dia. Retorna o total do dia em ml."
+    addWater(day: String!, ml: Int!): Int!
+    "[login] Marca/desmarca favorito. Retorna o novo estado."
+    toggleFavorite(recipeId: ID!): Boolean!
+}
+
+type AuthPayload {
+    token: String!
+    user: User!
 }
 
 type Recipe {
@@ -29,7 +60,13 @@ type Recipe {
     difficulty: String
     mealType: String
     steps: [String!]!
+    "Por porção (estimativa)."
+    calories: Int
+    "Gramas de proteína por porção (estimativa)."
+    protein: Float
     ingredients: [RecipeIngredient!]!
+    "Favorita do usuário logado (false sem login)."
+    favorite: Boolean!
 }
 
 type RecipeIngredient {
@@ -70,4 +107,37 @@ type User {
     goal: Goal
     preferences: [Preference!]!
     restrictions: [Restriction!]!
+    favorites: [Recipe!]!
+}
+
+type PlanItem {
+    id: ID!
+    recipe: Recipe!
+    day: String!
+    time: String!
+    mealType: String!
+    note: String
+    done: Boolean!
+}
+
+type DayStat {
+    day: String!
+    planned: Int!
+    done: Int!
+}
+
+type Stats {
+    "Somente dias com refeições planejadas."
+    days: [DayStat!]!
+    planned: Int!
+    done: Int!
+    "Receitas diferentes já feitas."
+    recipesTried: Int!
+    daysWithPlan: Int!
+    "Dias em que todas as refeições planejadas foram feitas."
+    daysOnPlan: Int!
+    "Média de ingredientes de frutas/verduras por dia com plano."
+    fruitVegPerDay: Float!
+    "Receitas diferentes / refeições feitas (0 a 1)."
+    variety: Float!
 }

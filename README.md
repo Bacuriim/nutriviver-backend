@@ -31,15 +31,24 @@ docker compose up --build
 
 { searchRecipes(text: "brocolis") { name ingredients { ingredient { name } } } }
 
-mutation { signUp(name: "ana", password: "segredo") { id } }
-
-mutation {
-  updateProfile(userId: 1, goal: "Perder peso",
-                preferences: ["Frango", "Ovo"], restrictions: ["Lactose"]) {
-    goal { name } preferences { name } restrictions { name }
-  }
-}
+mutation { signUp(name: "ana", password: "segredo") { token user { id } } }
 ```
+
+As operações do usuário exigem o header `Authorization: Bearer <token>`, com o token devolvido por `signUp` ou `login`:
+
+```graphql
+mutation { updateProfile(goal: "Perder peso", preferences: ["Frango"], restrictions: ["Lactose"]) { name } }
+
+{ recommendedRecipes(limit: 6) { name calories } }
+
+mutation { addToPlan(recipeId: 1, day: "2026-10-20", time: "12:30", mealType: "Almoço") { id } }
+
+{ plan(from: "2026-10-19", to: "2026-10-25") { day time mealType done recipe { name } } }
+
+{ stats(from: "2026-10-19", to: "2026-10-25") { planned done recipesTried days { day planned done } } }
+```
+
+Datas usam o formato `AAAA-MM-DD` e sempre vêm do app, que conhece o dia local do usuário. O servidor roda em UTC.
 
 ## Variáveis de ambiente
 
@@ -65,3 +74,16 @@ O Render roda essa imagem. Se o secret `RENDER_DEPLOY_HOOK` estiver configurado,
 - `users.id_goal` foi adicionado para guardar a relação user–goal desenhada no diagrama. Cada usuário tem um objetivo.
 - `recipe` ganhou `image_url`, `difficulty`, `meal_type` e `steps`, que o app exibe.
 - A senha é guardada com hash BCrypt, nunca em texto puro.
+
+Extensões para as funcionalidades do app, que não estão no diagrama:
+
+| Tabela/coluna | Uso |
+|---|---|
+| `recipe.calories`, `recipe.protein` | Informação nutricional por porção (RF07). São **estimativas**. |
+| `ingredient.restriction` | Ingrediente que conflita com uma restrição (ex.: Queijo → Lactose). Usado nas recomendações (RF11). |
+| `users.token` | Sessão do app: um token por usuário, trocado a cada login. |
+| `meal_plan` | Cardápio por dia e horário (RF08–RF10). `done` marca o que foi consumido e alimenta o histórico e as estatísticas (RF13–RF15). |
+| `water_intake` | Água bebida por dia. |
+| `user_favorite` | Receitas favoritas. |
+
+O seed (`data.sql`) tem 48 receitas com ingredientes, passo a passo, calorias e proteína.
