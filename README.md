@@ -52,7 +52,7 @@ mutation {
 
 ## Deploy
 
-O push na `main` dispara o workflow `.github/workflows/docker.yml`. Ele compila a imagem nativa e publica em `ghcr.io/<dono>/nutriviver-backend:latest`.
+O push na `main` dispara o workflow `.github/workflows/docker.yml`. Ele compila a imagem nativa e publica em `ghcr.io/bacuriim/nutriviver-backend:latest`.
 O Render roda essa imagem. Se o secret `RENDER_DEPLOY_HOOK` estiver configurado, o workflow também dispara o redeploy.
 
 - Banco: Neon (plano free)
