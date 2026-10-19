@@ -60,8 +60,8 @@ public class GraphqlController {
             params.put("maxPrepTime", maxPrepTime);
         }
         if (ingredients != null && !ingredients.isEmpty()) {
-            sql.append("""
-                     AND EXISTS (SELECT 1 FROM recipe_ingredient ri
+            sql.append(" AND ").append("""
+                    EXISTS (SELECT 1 FROM recipe_ingredient ri
                                  JOIN ingredient i ON i.id_ingredient = ri.id_ingredient
                                  WHERE ri.id_recipe = r.id_recipe AND i.name IN (:ingredients))""");
             params.put("ingredients", ingredients);

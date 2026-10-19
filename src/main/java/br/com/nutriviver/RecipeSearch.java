@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -98,8 +99,12 @@ public class RecipeSearch {
                             "ingredients", d.get("ingredients"))))
                     .append('\n');
         }
-        es.post().uri("/" + INDEX + "/_bulk?refresh=true").contentType(MediaType.APPLICATION_NDJSON)
-                .body(bulk.toString()).retrieve().toBodilessEntity();
+        // O _bulk responde 200 mesmo quando documentos falham; o erro real vem em "errors"/"items".
+        JsonNode result = es.post().uri("/" + INDEX + "/_bulk?refresh=true").contentType(MediaType.APPLICATION_NDJSON)
+                .body(bulk.toString().getBytes(StandardCharsets.UTF_8)).retrieve().body(JsonNode.class);
+        if (result == null || result.path("errors").asBoolean()) {
+            throw new IllegalStateException("Falha no _bulk: " + result);
+        }
         log.info("Elasticsearch: {} receitas indexadas", docs.size());
     }
 
@@ -114,7 +119,7 @@ public class RecipeSearch {
                     "fields", List.of("name^3", "ingredients^2", "description", "mealType"),
                     "fuzziness", "AUTO")));
             JsonNode hits = es.post().uri("/" + INDEX + "/_search").contentType(MediaType.APPLICATION_JSON)
-                    .body(json.writeValueAsString(query)).retrieve().body(JsonNode.class)
+                    .body(json.writeValueAsBytes(query)).retrieve().body(JsonNode.class)
                     .path("hits").path("hits");
             List<Integer> ids = new ArrayList<>();
             hits.forEach(h -> ids.add(Integer.parseInt(h.path("_id").asText())));

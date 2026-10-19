@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.graphql.execution.DataFetcherExceptionResolver;
 import org.springframework.graphql.execution.ErrorType;
-import org.springframework.graphql.GraphqlErrorBuilder;
+import graphql.GraphqlErrorBuilder;
 
 // O graphql-java lê os campos dos records por reflexão; no native image isso precisa ser registrado.
 @RegisterReflectionForBinding({Types.Category.class, Types.Ingredient.class, Types.RecipeIngredient.class,
