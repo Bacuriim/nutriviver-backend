@@ -1,0 +1,73 @@
+type Query {
+    "Lista receitas, com filtros opcionais (tipo de refeição, tempo máximo, ingredientes)."
+    recipes(mealType: String, maxPrepTime: Float, ingredients: [String!]): [Recipe!]!
+    recipe(id: ID!): Recipe
+    "Busca textual no Elasticsearch por nome, descrição ou ingrediente."
+    searchRecipes(text: String!): [Recipe!]!
+    categories: [Category!]!
+    ingredients: [Ingredient!]!
+    goals: [Goal!]!
+    preferences: [Preference!]!
+    restrictions: [Restriction!]!
+    user(id: ID!): User
+}
+
+type Mutation {
+    signUp(name: String!, password: String!): User!
+    "Retorna null se usuário ou senha estiverem errados."
+    login(name: String!, password: String!): User
+    "Campos omitidos não são alterados. Preferências/restrições novas são criadas pelo nome."
+    updateProfile(userId: ID!, goal: String, preferences: [String!], restrictions: [String!]): User!
+}
+
+type Recipe {
+    id: ID!
+    name: String!
+    description: String!
+    prepTime: Float!
+    imageUrl: String
+    difficulty: String
+    mealType: String
+    steps: [String!]!
+    ingredients: [RecipeIngredient!]!
+}
+
+type RecipeIngredient {
+    ingredient: Ingredient!
+    quantity: Float!
+    measureUnity: String!
+}
+
+type Ingredient {
+    id: ID!
+    name: String!
+    category: Category!
+}
+
+type Category {
+    id: ID!
+    name: String!
+}
+
+type Goal {
+    id: ID!
+    name: String!
+}
+
+type Preference {
+    id: ID!
+    name: String!
+}
+
+type Restriction {
+    id: ID!
+    name: String!
+}
+
+type User {
+    id: ID!
+    name: String!
+    goal: Goal
+    preferences: [Preference!]!
+    restrictions: [Restriction!]!
+}

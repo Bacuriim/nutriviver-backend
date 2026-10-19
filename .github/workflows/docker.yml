@@ -1,0 +1,32 @@
+# Compila o binário nativo (GraalVM) e publica a imagem no GHCR.
+# O Render puxa ghcr.io/<dono>/nutriviver-backend:latest; o build nativo não cabe no builder free dele.
+name: docker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/nutriviver-backend:latest
+      # Dispara o deploy no Render quando o secret RENDER_DEPLOY_HOOK existir.
+      - name: Deploy no Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        if: env.HOOK != ''
+        run: curl -fsS -X POST "$HOOK"
