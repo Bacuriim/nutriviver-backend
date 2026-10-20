@@ -27,7 +27,7 @@ docker compose up --build
 ## Exemplos
 
 ```graphql
-{ recipes(mealType: "Almoço", maxPrepTime: 30) { id name prepTime difficulty } }
+{ recipes(mealTypes: ["Almoço"], maxPrepTime: 30) { id name prepTime difficulty calories } }
 
 { searchRecipes(text: "brocolis") { name ingredients { ingredient { name } } } }
 
